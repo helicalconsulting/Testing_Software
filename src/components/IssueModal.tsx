@@ -208,7 +208,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({
     setIsSubmitting(true);
     try {
       await onSave({
-        projectId: projectId || 'proj-ecommerce',
+        projectId: projectId || '',
         srNo: Number(srNo) || nextSrNo,
         date: date || new Date().toISOString().split('T')[0],
         module: module.trim() || 'General',

@@ -255,7 +255,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onToggleSound}
               title={isSoundEnabled ? 'Sound Effects Enabled (Click to mute)' : 'Sound Effects Muted'}
-              className="p-1.5 sm:p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition active:scale-95"
+              className="hidden xs:flex p-1.5 sm:p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition active:scale-95"
             >
               {isSoundEnabled ? (
                 <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" />
@@ -268,7 +268,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onToggleDarkMode}
               title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              className="p-1.5 sm:p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition active:scale-95"
+              className="hidden xs:flex p-1.5 sm:p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition active:scale-95"
             >
               {isDarkMode ? (
                 <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />

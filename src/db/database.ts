@@ -53,120 +53,22 @@ export function createPlaceholderScreenshot(title: string, sub: string, color = 
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
-// Initial seed data to give testers an immediate rich preview
+// Initial seed data if DB is completely empty: Creates a single clean default project
 export async function seedInitialDataIfNeeded() {
   const projectCount = await db.projects.count();
   if (projectCount > 0) return;
 
-  const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
-  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-  const project1: Project = {
-    id: 'proj-ecommerce',
-    name: 'E-Commerce Portal (v2.4)',
-    prefix: 'SHOP',
-    description: 'B2C web storefront and checkout microservices testing',
-    createdAt: new Date(now.getTime() - 86400000 * 5).toISOString(),
-    updatedAt: now.toISOString(),
+  const now = new Date().toISOString();
+  const defaultProject: Project = {
+    id: 'proj-' + Date.now(),
+    name: 'New Project',
+    prefix: 'QA',
+    description: 'Workspace for software testing & QA defect tracking',
+    createdAt: now,
+    updatedAt: now,
   };
 
-  const project2: Project = {
-    id: 'proj-fintech',
-    name: 'Mobile Banking & Payments',
-    prefix: 'BANK',
-    description: 'Customer payment gateway and transaction dashboard',
-    createdAt: new Date(now.getTime() - 86400000 * 3).toISOString(),
-    updatedAt: now.toISOString(),
-  };
-
-  await db.projects.bulkAdd([project1, project2]);
-
-  const sampleIssues: Issue[] = [
-    {
-      id: 'issue-1',
-      projectId: 'proj-ecommerce',
-      srNo: 1,
-      date: twoDaysAgo,
-      module: 'Checkout & Payments',
-      issue: 'Checkout payment fails with "500 Internal Server Error" when applying discount coupon SAVE20',
-      expectedResult: 'The 20% discount should apply to subtotal and user should navigate smoothly to payment gateway step.',
-      screenshot: createPlaceholderScreenshot('500 Internal Server Error at /api/checkout/apply-coupon', 'Coupon code SAVE20 causes null pointer in discount engine', '#ef4444'),
-      screenshotName: 'coupon_500_error.png',
-      status: 'In Progress',
-      severity: 'Critical',
-      remarks: 'Reproduced on Chrome 128 / macOS Sequoia & Windows 11. Backend stack trace indicates CouponService.calcDiscount threw NullPointerException.',
-      createdAt: twoDaysAgo,
-      updatedAt: twoDaysAgo,
-    },
-    {
-      id: 'issue-2',
-      projectId: 'proj-ecommerce',
-      srNo: 2,
-      date: yesterday,
-      module: 'Product Catalog',
-      issue: 'Product image gallery thumbnail carousel fails to render on Safari Mobile (iOS 18)',
-      expectedResult: 'All 4 product preview thumbnails should align horizontally and respond to tap gestures.',
-      screenshot: createPlaceholderScreenshot('CSS Flexbox Wrap Overflow on Mobile Safari', 'Thumbnails overlapping product description section', '#f59e0b'),
-      screenshotName: 'safari_mobile_thumbnails.png',
-      status: 'Open',
-      severity: 'High',
-      remarks: 'Device: iPhone 15 Pro, iOS 18.0 Safari. Desktop browsers render correctly.',
-      createdAt: yesterday,
-      updatedAt: yesterday,
-    },
-    {
-      id: 'issue-3',
-      projectId: 'proj-ecommerce',
-      srNo: 3,
-      date: todayStr,
-      module: 'Shipping & Delivery',
-      issue: 'Address autocomplete dropdown overlaps the "Place Order" button on 768px tablet view',
-      expectedResult: 'Address suggestions dropdown should have proper z-index and not obscure action buttons.',
-      screenshot: createPlaceholderScreenshot('Z-Index Clashing: Autocomplete List covers CTA Button', 'z-index 10 vs 50 conflict in CheckoutForm.tsx', '#3b82f6'),
-      screenshotName: 'address_zindex_bug.png',
-      status: 'Resolved',
-      severity: 'Medium',
-      remarks: 'Dev fixed in commit #89f2a1b. Tested on iPad Air portrait view - verified resolved.',
-      createdAt: todayStr,
-      updatedAt: todayStr,
-    },
-    {
-      id: 'issue-4',
-      projectId: 'proj-ecommerce',
-      srNo: 4,
-      date: todayStr,
-      module: 'Order Notifications',
-      issue: 'Order confirmation email received with unparsed HTML entities (&amp; instead of &)',
-      expectedResult: 'Email body should render decoded plain text or properly sanitized HTML entities.',
-      screenshot: createPlaceholderScreenshot('Email Template Escaping Bug', 'Raw &amp; characters visible in Subject line', '#8b5cf6'),
-      screenshotName: 'email_template_escape.png',
-      status: 'Open',
-      severity: 'Low',
-      remarks: 'Observed on Gmail Web & Outlook desktop client.',
-      createdAt: todayStr,
-      updatedAt: todayStr,
-    },
-    {
-      id: 'issue-5',
-      projectId: 'proj-fintech',
-      srNo: 1,
-      date: yesterday,
-      module: 'Authentication & Security',
-      issue: 'Biometric FaceID authentication prompt triggers twice consecutively on cold launch',
-      expectedResult: 'FaceID prompt should display only once upon launching the app.',
-      screenshot: createPlaceholderScreenshot('Duplicate Auth Intent Triggered', 'App launches two biometric system dialogs', '#ef4444'),
-      screenshotName: 'duplicate_faceid_dialog.png',
-      status: 'Blocked',
-      severity: 'Critical',
-      remarks: 'Awaiting native iOS SDK update from security team.',
-      createdAt: yesterday,
-      updatedAt: yesterday,
-    }
-  ];
-
-  await db.issues.bulkAdd(sampleIssues);
+  await db.projects.add(defaultProject);
 }
 
 // Database helper operations

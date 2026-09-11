@@ -35,7 +35,7 @@ import { Sparkles, CheckCircle2, Keyboard, Database, Edit3, Trash2 } from 'lucid
 
 export const App: React.FC = () => {
   const [activeProjectId, setActiveProjectId] = useState<string>(() => {
-    return localStorage.getItem('qa_active_project_id') || 'proj-ecommerce';
+    return localStorage.getItem('qa_active_project_id') || '';
   });
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -130,6 +130,18 @@ export const App: React.FC = () => {
     let isMounted = true;
 
     async function init() {
+      // Purge any legacy localStorage pointers to mock projects
+      const storedActiveId = localStorage.getItem('qa_active_project_id');
+      if (storedActiveId === 'proj-ecommerce' || storedActiveId === 'proj-fintech') {
+        localStorage.removeItem('qa_active_project_id');
+      }
+      try {
+        await db.projects.where('id').anyOf(['proj-ecommerce', 'proj-fintech']).delete();
+        await db.issues.where('projectId').anyOf(['proj-ecommerce', 'proj-fintech']).delete();
+      } catch (e) {
+        // Ignore if dexie query fails
+      }
+
       // 1. Check backend REST API status
       const health = await checkBackendHealth();
       const online = !!health.online;
@@ -138,8 +150,11 @@ export const App: React.FC = () => {
       if (online) {
         try {
           const beProjects = await apiGetProjects();
+          // Always clear local Dexie cache when online to guarantee zero mock data residue
+          await db.projects.clear();
+          await db.issues.clear();
+
           if (beProjects && beProjects.length > 0) {
-            // Load backend projects and issues into local IndexedDB cache
             for (const p of beProjects) {
               await db.projects.put(p);
               try {
@@ -152,14 +167,16 @@ export const App: React.FC = () => {
               }
             }
           } else {
-            // Backend is empty: seed default data and sync up to SQLite
-            await seedInitialDataIfNeeded();
-            const localProjects = await db.projects.toArray();
-            const localIssues = await db.issues.toArray();
-            await apiSyncData(localProjects, localIssues);
+            // DB is completely fresh & empty: create 1 clean default project directly on backend DB
+            const created = await apiSaveProject({
+              name: 'New Project',
+              prefix: 'QA',
+              description: 'Workspace for software testing & QA defect tracking',
+            });
+            await db.projects.put(created);
           }
         } catch (err) {
-          console.warn('Initial backend sync failed, using local DB:', err);
+          console.warn('Initial backend fetch error:', err);
           await seedInitialDataIfNeeded();
         }
       } else {
@@ -323,7 +340,7 @@ export const App: React.FC = () => {
   ) => {
     const now = new Date().toISOString();
     const effectiveProjectId =
-      issueData.projectId || activeProjectId || projects[0]?.id || 'proj-ecommerce';
+      issueData.projectId || activeProjectId || projects[0]?.id || '';
 
     // Ensure project exists in DB so issues are never orphaned
     const projExists = await db.projects.get(effectiveProjectId);
@@ -650,7 +667,7 @@ export const App: React.FC = () => {
                 </span>
 
                 {/* Visible Edit & Delete Project Action Buttons */}
-                <div className="flex items-center gap-2 ml-1">
+                <div className="flex items-center gap-1.5 xs:gap-2">
                   <button
                     type="button"
                     onClick={() => {
@@ -658,9 +675,9 @@ export const App: React.FC = () => {
                       setIsProjectModalOpen(true);
                     }}
                     title="Edit project settings"
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg transition shadow-2xs cursor-pointer active:scale-95"
+                    className="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg transition shadow-2xs cursor-pointer active:scale-95"
                   >
-                    <Edit3 className="w-4 h-4" />
+                    <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span>Edit</span>
                   </button>
 
@@ -668,9 +685,9 @@ export const App: React.FC = () => {
                     type="button"
                     onClick={handleDeleteProjectClick}
                     title="Delete this project"
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/60 rounded-lg transition shadow-2xs cursor-pointer active:scale-95"
+                    className="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/60 rounded-lg transition shadow-2xs cursor-pointer active:scale-95"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span>Delete Project</span>
                   </button>
                 </div>

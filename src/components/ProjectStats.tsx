@@ -81,15 +81,15 @@ export const ProjectStats: React.FC<ProjectStatsProps> = ({
           <button
             key={stat.label}
             onClick={() => onFilterByStatus(stat.statusKey)}
-            className={`p-2.5 sm:p-3.5 rounded-xl border text-left transition-all duration-150 cursor-pointer active:scale-98 shadow-xs ${
+            className={`p-2 sm:p-3.5 rounded-xl border text-left transition-all duration-150 cursor-pointer active:scale-98 shadow-xs ${
               stat.color
             } ${isActive ? stat.activeColor : 'opacity-85 hover:opacity-100 hover:shadow-xs'}`}
           >
             <div className="flex items-center justify-between gap-1">
-              <span className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate block">
+              <span className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block leading-tight">
                 {stat.label}
               </span>
-              <Icon className="w-4 h-4 opacity-60 shrink-0" />
+              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-60 shrink-0" />
             </div>
             <div className="mt-1.5 sm:mt-2 flex items-baseline justify-between gap-1">
               <span className="text-xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
