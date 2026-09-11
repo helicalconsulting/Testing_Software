@@ -86,18 +86,18 @@ export const ProjectStats: React.FC<ProjectStatsProps> = ({
             } ${isActive ? stat.activeColor : 'opacity-85 hover:opacity-100 hover:shadow-xs'}`}
           >
             <div className="flex items-center justify-between gap-1">
-              <span className="text-[9px] xs:text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate block">
+              <span className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate block">
                 {stat.label}
               </span>
-              <Icon className="w-3.5 h-3.5 opacity-60 shrink-0" />
+              <Icon className="w-4 h-4 opacity-60 shrink-0" />
             </div>
-            <div className="mt-1 sm:mt-2 flex items-baseline justify-between gap-1">
-              <span className="text-lg sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+            <div className="mt-1.5 sm:mt-2 flex items-baseline justify-between gap-1">
+              <span className="text-xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
                 {stat.count}
               </span>
               {stat.label === 'Total Issues' && criticalCount > 0 && (
-                <span className="text-[9px] sm:text-[10px] font-bold text-red-600 dark:text-red-300 bg-red-100 dark:bg-red-950/80 border border-red-200 dark:border-red-800 px-1 sm:px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shrink-0">
-                  <ShieldAlert className="w-2.5 h-2.5" />
+                <span className="text-xs font-bold text-red-600 dark:text-red-300 bg-red-100 dark:bg-red-950/80 border border-red-200 dark:border-red-800 px-1.5 py-0.5 rounded-md flex items-center gap-1 shrink-0">
+                  <ShieldAlert className="w-3 h-3" />
                   {criticalCount} Crit
                 </span>
               )}

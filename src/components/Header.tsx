@@ -89,12 +89,12 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-xs transition-colors duration-200">
-      <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8">
+      <div className="w-full px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-1.5 sm:gap-4">
           {/* App Brand Logo */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 active:scale-95 transition-transform shrink-0">
-              <Bug className="w-4 h-4 sm:w-5 sm:h-5" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-md shadow-blue-500/10 active:scale-95 transition-transform shrink-0 overflow-hidden p-1">
+              <img src="/Procnex-logo.jpeg" alt="Procnex Logo" className="w-full h-full object-contain rounded-lg" />
             </div>
             <div>
               <div className="flex items-center gap-1.5 sm:gap-2">

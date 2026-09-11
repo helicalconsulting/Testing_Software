@@ -3,8 +3,13 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
+  html {
+    font-size: 18px;
+  }
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
   }
   code, pre, .font-mono {
     font-family: 'JetBrains Mono', monospace;

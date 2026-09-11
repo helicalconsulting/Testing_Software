@@ -8,20 +8,17 @@ import {
   Image as ImageIcon,
   Edit2,
   Trash2,
-  ExternalLink,
   ChevronDown,
   CheckCircle2,
   Clock,
   AlertOctagon,
   Archive,
   AlertCircle,
-  Plus,
   Copy,
   Check,
   CheckSquare,
   Square,
   Layers,
-  Sparkles,
 } from 'lucide-react';
 
 interface IssueTableProps {
@@ -58,13 +55,6 @@ export const IssueTable: React.FC<IssueTableProps> = ({
   onBulkDelete,
   onBulkStatusChange,
 }) => {
-  const [quickModule, setQuickModule] = useState('General');
-  const [quickIssue, setQuickIssue] = useState('');
-  const [quickExpected, setQuickExpected] = useState('');
-  const [quickStatus, setQuickStatus] = useState<IssueStatus>('Open');
-  const [isQuickAdding, setIsQuickAdding] = useState(false);
-
-  // Multi-select state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -97,31 +87,6 @@ export const IssueTable: React.FC<IssueTableProps> = ({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleQuickAddSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickIssue.trim()) {
-      alert('Please enter defect description to add');
-      return;
-    }
-    setIsQuickAdding(true);
-    try {
-      if (onQuickAddIssue) {
-        await onQuickAddIssue({
-          module: quickModule.trim() || 'General',
-          issue: quickIssue.trim(),
-          expectedResult: quickExpected.trim() || 'Expected to function properly without error',
-          status: quickStatus,
-        });
-        setQuickIssue('');
-        setQuickExpected('');
-      }
-    } catch (err: any) {
-      console.error(err);
-      alert('Failed to add issue: ' + (err?.message || err));
-    } finally {
-      setIsQuickAdding(false);
-    }
-  };
 
   const getStatusBadge = (status: IssueStatus) => {
     switch (status) {
@@ -161,76 +126,6 @@ export const IssueTable: React.FC<IssueTableProps> = ({
       {/* CARD GRID VIEW */}
       {viewMode === 'cards' ? (
         <div className="space-y-4">
-          {/* Quick Add Card for Card View */}
-          <div className="bg-gradient-to-r from-blue-50/70 to-indigo-50/70 dark:from-slate-900 dark:to-blue-950/30 rounded-2xl border-2 border-dashed border-blue-200 dark:border-blue-900/60 p-4 shadow-xs">
-            <form onSubmit={handleQuickAddSubmit} className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">
-                    Quick Log Issue #{nextSrNo}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={onOpenNewIssueModal}
-                  className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                >
-                  <span>Open Full Form & Attach Screenshot</span>
-                  <ExternalLink className="w-3 h-3" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <input
-                  type="text"
-                  value={quickModule}
-                  onChange={(e) => setQuickModule(e.target.value)}
-                  placeholder="Module (e.g. Auth, Cart)"
-                  className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-                <div className="sm:col-span-2">
-                  <input
-                    type="text"
-                    value={quickIssue}
-                    onChange={(e) => setQuickIssue(e.target.value)}
-                    placeholder="⚡ Defect description (Press Enter to log)..."
-                    className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-blue-300 dark:border-blue-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-2.5">
-                <input
-                  type="text"
-                  value={quickExpected}
-                  onChange={(e) => setQuickExpected(e.target.value)}
-                  placeholder="Expected result (optional)..."
-                  className="flex-1 w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                  <select
-                    value={quickStatus}
-                    onChange={(e) => setQuickStatus(e.target.value as IssueStatus)}
-                    className="px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200"
-                  >
-                    <option value="Open">Open</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Resolved">Resolved</option>
-                    <option value="Blocked">Blocked</option>
-                  </select>
-                  <button
-                    type="submit"
-                    disabled={isQuickAdding || !quickIssue.trim()}
-                    className="flex items-center gap-1 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs disabled:opacity-40 shrink-0"
-                  >
-                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                    <span>Add</span>
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
 
           {/* Cards Grid */}
           {issues.length === 0 ? (
@@ -341,7 +236,7 @@ export const IssueTable: React.FC<IssueTableProps> = ({
                               className="w-full h-full object-cover group-hover/img:scale-105 transition duration-200"
                             />
                             <div className="absolute bottom-2 right-2 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 font-medium">
-                              <ExternalLink className="w-3 h-3" />
+                              <span>↗</span>
                               <span>Enlarge</span>
                             </div>
                           </button>
@@ -418,7 +313,7 @@ export const IssueTable: React.FC<IssueTableProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-slate-700 dark:text-slate-300">
               <thead>
-                <tr className="bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider select-none">
+                <tr className="bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider select-none">
                   <th className="py-3 px-3 w-10 text-center">
                     <button
                       type="button"
@@ -445,99 +340,17 @@ export const IssueTable: React.FC<IssueTableProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
-                {/* Quick Add Row */}
-                <tr className="bg-blue-50/50 dark:bg-blue-950/20 border-b-2 border-blue-200/80 dark:border-blue-800/60 text-xs">
-                  <td className="py-2.5 px-3 text-center align-middle">
-                    <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 mx-auto" />
-                  </td>
-                  <td className="py-2.5 px-3.5 text-center align-middle font-mono font-bold text-blue-700 dark:text-blue-400">
-                    #{nextSrNo}
-                  </td>
-                  <td className="py-2.5 px-3.5 text-slate-500 dark:text-slate-400 font-mono text-xs align-middle whitespace-nowrap">
-                    Today
-                  </td>
-                  <td className="py-2.5 px-3.5 align-middle">
-                    <input
-                      type="text"
-                      value={quickModule}
-                      onChange={(e) => setQuickModule(e.target.value)}
-                      placeholder="Module (e.g. Auth)"
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </td>
-                  <td className="py-2.5 px-4 align-middle">
-                    <input
-                      type="text"
-                      value={quickIssue}
-                      onChange={(e) => setQuickIssue(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleQuickAddSubmit(e);
-                      }}
-                      placeholder="⚡ Quick Add: Type defect description & press Enter..."
-                      className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-blue-300 dark:border-blue-700 rounded-lg text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-600"
-                    />
-                  </td>
-                  <td className="py-2.5 px-4 align-middle">
-                    <input
-                      type="text"
-                      value={quickExpected}
-                      onChange={(e) => setQuickExpected(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleQuickAddSubmit(e);
-                      }}
-                      placeholder="Expected result (optional)..."
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </td>
-                  <td className="py-2.5 px-3.5 text-center align-middle text-[11px] text-slate-400">
-                    <button
-                      type="button"
-                      onClick={onOpenNewIssueModal}
-                      className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline"
-                      title="Attach screenshot using full modal"
-                    >
-                      + Attach
-                    </button>
-                  </td>
-                  <td className="py-2.5 px-3.5 align-middle">
-                    <select
-                      value={quickStatus}
-                      onChange={(e) => setQuickStatus(e.target.value as IssueStatus)}
-                      className="w-full px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none"
-                    >
-                      <option value="Open">Open</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Resolved">Resolved</option>
-                      <option value="Blocked">Blocked</option>
-                    </select>
-                  </td>
-                  <td className="py-2.5 px-4 text-slate-400 dark:text-slate-500 text-xs italic align-middle">
-                    Fast inline log
-                  </td>
-                  <td className="py-2.5 px-3 text-right align-middle">
-                    <button
-                      type="button"
-                      onClick={handleQuickAddSubmit}
-                      disabled={isQuickAdding || !quickIssue.trim()}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-xs disabled:opacity-40"
-                    >
-                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                      Add
-                    </button>
-                  </td>
-                </tr>
 
                 {issues.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="py-8 text-center text-slate-500 text-xs">
-                      <div className="flex flex-col items-center justify-center gap-1.5">
-                        <CheckCircle2 className="w-6 h-6 text-slate-400" />
-                        <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    <td colSpan={10} className="py-12 text-center text-slate-500 text-sm">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <CheckCircle2 className="w-8 h-8 text-slate-400" />
+                        <span className="font-semibold text-base text-slate-700 dark:text-slate-300">
                           No issues recorded yet for this project
                         </span>
-                        <span className="text-[11px] text-slate-400">
-                          Type your defect in the row above and click <strong>Add</strong>, or click{' '}
-                          <strong>+ Log Issue</strong> at the top.
+                        <span className="text-xs text-slate-400">
+                          Click <strong>+ Log Issue</strong> at the top to record a defect.
                         </span>
                       </div>
                     </td>
@@ -636,8 +449,8 @@ export const IssueTable: React.FC<IssueTableProps> = ({
                                   className="w-full h-full object-cover group-hover/img:scale-105 transition duration-200"
                                 />
                               </button>
-                              <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white p-0.5 rounded-full shadow-xs pointer-events-none">
-                                <ExternalLink className="w-2.5 h-2.5" />
+                              <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white p-0.5 rounded-full shadow-xs pointer-events-none text-[8px] flex items-center justify-center w-3.5 h-3.5">
+                                ↗
                               </div>
                             </div>
                           ) : (
