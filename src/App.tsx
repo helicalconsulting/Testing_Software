@@ -619,7 +619,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100/60 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-blue-500 selection:text-white transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-slate-100/60 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-blue-500 selection:text-white transition-colors duration-200 w-full max-w-full overflow-x-hidden">
       {/* Top Navbar */}
       <Header
         projects={projects}
@@ -653,7 +653,7 @@ export const App: React.FC = () => {
       />
 
       {/* Main Content Dashboard */}
-      <main className="flex-1 w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <main className="flex-1 w-full max-w-full px-2.5 sm:px-6 lg:px-8 py-3 sm:py-6 overflow-x-hidden">
         {/* Project Title and Overview */}
         {activeProject && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-5">

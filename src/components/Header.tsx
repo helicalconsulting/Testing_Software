@@ -92,15 +92,14 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="w-full px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-1.5 sm:gap-4">
           {/* App Brand Logo */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-md shadow-blue-500/10 active:scale-95 transition-transform shrink-0 overflow-hidden p-1">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-md shadow-blue-500/10 active:scale-95 transition-transform shrink-0 overflow-hidden p-1">
               <img src="/Procnex-logo.jpeg" alt="Procnex Logo" className="w-full h-full object-contain rounded-lg" />
             </div>
-            <div>
+            <div className="hidden sm:block">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <span className="font-extrabold text-xs xs:text-sm sm:text-lg tracking-tight text-slate-900 dark:text-white">
-                  <span className="xs:hidden">QA Logger</span>
-                  <span className="hidden xs:inline">QA Issue Logger</span>
+                  QA Issue Logger
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden xl:block">
@@ -110,21 +109,21 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Center: Project Switcher Dropdown */}
-          <div className="flex items-center">
-            <div className="relative" ref={projectDropdownRef}>
+          <div className="flex items-center min-w-0">
+            <div className="relative max-w-full" ref={projectDropdownRef}>
               <button
                 type="button"
                 onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
                 className="flex items-center bg-slate-100/90 dark:bg-slate-800/90 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 border border-slate-300/80 dark:border-slate-700 rounded-xl p-0.5 sm:p-1 transition shadow-xs text-left"
               >
-                <div className="flex items-center gap-1 sm:gap-2 px-1.5 sm:px-2.5 py-1 sm:py-1.5 cursor-pointer">
+                <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2.5 py-0.5 sm:py-1.5 cursor-pointer">
                   <FolderKanban className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                  <div className="text-left">
+                  <div className="text-left min-w-0">
                     <span className="text-[8px] sm:text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 block leading-none">
                       Project
                     </span>
                     <div className="flex items-center gap-1 mt-0.5">
-                      <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 max-w-[65px] xs:max-w-[110px] sm:max-w-[180px] truncate block">
+                      <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 max-w-[70px] xs:max-w-[110px] sm:max-w-[180px] truncate block">
                         {activeProject?.name || 'Select'}
                       </span>
                       {activeProject?.prefix && (
@@ -134,7 +133,7 @@ export const Header: React.FC<HeaderProps> = ({
                       )}
                     </div>
                   </div>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 ml-0.5 transition-transform ${isProjectDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 ml-0.5 shrink-0 transition-transform ${isProjectDropdownOpen ? 'rotate-180' : ''}`} />
                 </div>
               </button>
 
@@ -267,13 +266,20 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Dark Mode Toggle */}
             <button
               onClick={onToggleDarkMode}
-              title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              className="hidden xs:flex p-1.5 sm:p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition active:scale-95"
+              title={isDarkMode ? 'Switch to Light Mode (Press D)' : 'Switch to Dark Mode (Press D)'}
+              aria-label="Toggle Theme"
+              className="flex items-center gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-700 transition active:scale-95 shadow-2xs cursor-pointer"
             >
               {isDarkMode ? (
-                <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+                <>
+                  <Sun className="w-4 h-4 text-amber-400" />
+                  <span className="hidden md:inline">Light</span>
+                </>
               ) : (
-                <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600" />
+                <>
+                  <Moon className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                  <span className="hidden md:inline">Dark</span>
+                </>
               )}
             </button>
 
@@ -401,6 +407,26 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Quick Actions Grid */}
             <div className="grid grid-cols-2 gap-2 text-xs">
+              <button
+                onClick={() => {
+                  onToggleDarkMode();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-lg font-medium text-slate-700 dark:text-slate-200"
+              >
+                {isDarkMode ? (
+                  <>
+                    <Sun className="w-4 h-4 text-amber-400" />
+                    <span>Light Mode</span>
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                    <span>Dark Mode</span>
+                  </>
+                )}
+              </button>
+
               <button
                 onClick={() => {
                   onOpenCloudinaryModal();
