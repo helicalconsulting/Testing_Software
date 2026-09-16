@@ -1,9 +1,11 @@
 import Dexie, { Table } from 'dexie';
 import { Project, Issue } from '../types/issue';
+import { TestCase } from '../types/testCase';
 
 class IssueLoggerDB extends Dexie {
   projects!: Table<Project, string>;
   issues!: Table<Issue, string>;
+  testCases!: Table<TestCase, string>;
 
   constructor() {
     super('QAIssueLoggerDB');
@@ -14,6 +16,11 @@ class IssueLoggerDB extends Dexie {
     this.version(2).stores({
       projects: 'id, name, prefix, createdAt',
       issues: 'id, projectId, srNo, date, module, status, severity, createdAt',
+    });
+    this.version(3).stores({
+      projects: 'id, name, prefix, createdAt',
+      issues: 'id, projectId, srNo, date, module, status, severity, createdAt',
+      testCases: 'id, projectId, srNo, module, status, createdAt',
     });
   }
 }
@@ -85,4 +92,10 @@ export async function renumberSrNos(projectId: string) {
       await db.issues.update(issues[i].id, { srNo: i + 1 });
     }
   }
+}
+
+export async function getNextTestCaseSrNo(projectId: string): Promise<number> {
+  const cases = await db.testCases.where('projectId').equals(projectId).sortBy('srNo');
+  if (cases.length === 0) return 1;
+  return cases[cases.length - 1].srNo + 1;
 }

@@ -178,3 +178,46 @@ export async function apiSyncData(projects: Project[], issues: Issue[]) {
   if (!res.ok) throw new Error('Sync failed');
   return res.json();
 }
+
+/**
+ * Fetch test cases by project ID
+ */
+export async function apiGetTestCases(projectId: string): Promise<any[]> {
+  try {
+    const res = await fetch(`${API_BASE}/testcases?projectId=${encodeURIComponent(projectId)}`);
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Save test case (create or update)
+ */
+export async function apiSaveTestCase(testCase: any, isUpdate: boolean = false): Promise<any> {
+  const url = isUpdate && testCase.id ? `${API_BASE}/testcases/${testCase.id}` : `${API_BASE}/testcases`;
+  const method = isUpdate && testCase.id ? 'PUT' : 'POST';
+
+  const res = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(testCase),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to save test case');
+  }
+  return res.json();
+}
+
+/**
+ * Delete test case
+ */
+export async function apiDeleteTestCase(id: string): Promise<boolean> {
+  const res = await fetch(`${API_BASE}/testcases/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete test case');
+  const data = await res.json();
+  return !!data.success;
+}

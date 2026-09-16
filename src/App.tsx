@@ -2,11 +2,14 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, seedInitialDataIfNeeded } from './db/database';
 import { Project, Issue, IssueStatus, FilterOptions, ExportData } from './types/issue';
+import { TestCase, TestCaseStatus } from './types/testCase';
 import { Header } from './components/Header';
 import { ProjectStats } from './components/ProjectStats';
 import { FilterBar } from './components/FilterBar';
 import { IssueTable } from './components/IssueTable';
 import { IssueModal } from './components/IssueModal';
+import { TestCaseModal } from './components/TestCaseModal';
+import { TestCaseView } from './components/TestCaseView';
 import { ProjectModal } from './components/ProjectModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { ImageLightbox } from './components/ImageLightbox';
@@ -19,6 +22,7 @@ import {
   isAudioEnabled,
   toggleAudioEnabled,
 } from './utils/audio';
+import { exportTestCasesToCSV } from './utils/export';
 import {
   checkBackendHealth,
   apiGetProjects,
@@ -30,8 +34,11 @@ import {
   apiBulkUpdateStatus,
   apiBulkDeleteIssues,
   apiSyncData,
+  apiGetTestCases,
+  apiSaveTestCase,
+  apiDeleteTestCase,
 } from './services/api';
-import { Sparkles, CheckCircle2, Keyboard, Database, Edit3, Trash2 } from 'lucide-react';
+import { Sparkles, CheckCircle2, Keyboard, Database, Edit3, Trash2, Target, AlertCircle } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [activeProjectId, setActiveProjectId] = useState<string>(() => {
@@ -40,6 +47,11 @@ export const App: React.FC = () => {
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isBackendOnline, setIsBackendOnline] = useState<boolean>(false);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   // Theme state (Dark Mode)
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
@@ -77,9 +89,21 @@ export const App: React.FC = () => {
     sortOrder: 'asc',
   });
 
+  // Active tab: 'issues' or 'testCases' (persisted across refreshes)
+  const [activeTab, setActiveTab] = useState<'issues' | 'testCases'>(() => {
+    return (localStorage.getItem('qa_active_tab') as 'issues' | 'testCases') || 'issues';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('qa_active_tab', activeTab);
+  }, [activeTab]);
+
   // Modal states
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
   const [editingIssue, setEditingIssue] = useState<Issue | null>(null);
+
+  const [isTestCaseModalOpen, setIsTestCaseModalOpen] = useState(false);
+  const [editingTestCase, setEditingTestCase] = useState<TestCase | null>(null);
 
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -153,6 +177,7 @@ export const App: React.FC = () => {
           // Always clear local Dexie cache when online to guarantee zero mock data residue
           await db.projects.clear();
           await db.issues.clear();
+          await db.testCases.clear();
 
           if (beProjects && beProjects.length > 0) {
             for (const p of beProjects) {
@@ -164,6 +189,15 @@ export const App: React.FC = () => {
                 }
               } catch (err) {
                 console.warn(`Failed to fetch issues for project ${p.id}:`, err);
+              }
+
+              try {
+                const beTestCases = await apiGetTestCases(p.id);
+                if (beTestCases && beTestCases.length > 0) {
+                  await db.testCases.bulkPut(beTestCases);
+                }
+              } catch (err) {
+                console.warn(`Failed to fetch test cases for project ${p.id}:`, err);
               }
             }
           } else {
@@ -278,6 +312,15 @@ export const App: React.FC = () => {
       [activeProjectId]
     ) || [];
 
+  const testCases =
+    useLiveQuery<TestCase[]>(
+      () =>
+        activeProjectId
+          ? db.testCases.where('projectId').equals(activeProjectId).sortBy('srNo')
+          : Promise.resolve<TestCase[]>([]),
+      [activeProjectId]
+    ) || [];
+
   // Active project object
   const activeProject = useMemo(() => {
     return projects.find((p) => p.id === activeProjectId) || projects[0] || null;
@@ -288,6 +331,11 @@ export const App: React.FC = () => {
     if (rawIssues.length === 0) return 1;
     return Math.max(...rawIssues.map((i) => i.srNo)) + 1;
   }, [rawIssues]);
+
+  const nextTestCaseSrNo = useMemo(() => {
+    if (testCases.length === 0) return 1;
+    return Math.max(...testCases.map((tc) => tc.srNo)) + 1;
+  }, [testCases]);
 
   // Available unique modules for filter dropdown
   const availableModules = useMemo(() => {
@@ -574,6 +622,109 @@ export const App: React.FC = () => {
     });
   };
 
+  // Test case handlers
+  const handleSaveTestCase = async (
+    testCaseData: Omit<TestCase, 'id' | 'createdAt' | 'updatedAt'>
+  ) => {
+    const now = new Date().toISOString();
+    let savedTestCase: TestCase;
+
+    if (editingTestCase) {
+      savedTestCase = {
+        ...editingTestCase,
+        ...testCaseData,
+        updatedAt: now,
+      };
+      await db.testCases.put(savedTestCase);
+      if (isBackendOnline) {
+        apiSaveTestCase(savedTestCase, true).catch((err) =>
+          console.warn('Backend test case save failed:', err)
+        );
+      }
+      showToast('Targeted test case updated');
+    } else {
+      const newId = 'tc-' + Date.now();
+      savedTestCase = {
+        id: newId,
+        ...testCaseData,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await db.testCases.add(savedTestCase);
+      if (isBackendOnline) {
+        apiSaveTestCase(savedTestCase, false).catch((err) =>
+          console.warn('Backend test case save failed:', err)
+        );
+      }
+      showToast('Targeted test case added');
+    }
+    if (isSoundEnabled) playSuccessSound();
+  };
+
+  const handleDeleteTestCaseClick = (tc: TestCase) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Targeted Test Case',
+      message: `Are you sure you want to delete Test Case #${tc.srNo} (${tc.module}: ${tc.title})?`,
+      onConfirm: async () => {
+        await db.testCases.delete(tc.id);
+        if (isBackendOnline) {
+          apiDeleteTestCase(tc.id).catch((err) =>
+            console.warn('Backend delete test case failed:', err)
+          );
+        }
+        if (isSoundEnabled) playDeleteSound();
+        showToast('Targeted test case deleted');
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
+  };
+
+  const handleTestCaseStatusChange = async (id: string, newStatus: TestCaseStatus) => {
+    const tc = await db.testCases.get(id);
+    if (!tc) return;
+    const updated = { ...tc, status: newStatus, updatedAt: new Date().toISOString() };
+    await db.testCases.put(updated);
+    if (isBackendOnline) {
+      apiSaveTestCase(updated, true).catch((err) =>
+        console.warn('Backend test case status update failed:', err)
+      );
+    }
+    showToast(`Test Case #${tc.srNo} marked as ${newStatus}`);
+  };
+
+  const handleTestCaseRemarksChange = async (id: string, remarks: string) => {
+    const tc = await db.testCases.get(id);
+    if (!tc) return;
+    const updated = { ...tc, remarks, updatedAt: new Date().toISOString() };
+    await db.testCases.put(updated);
+    if (isBackendOnline) {
+      apiSaveTestCase(updated, true).catch((err) =>
+        console.warn('Backend test case remarks update failed:', err)
+      );
+    }
+    showToast(`Remarks updated for Test Case #${tc.srNo}`);
+  };
+
+  const handleConvertTestCaseToIssue = (tc: TestCase) => {
+    setActiveTab('issues');
+    setEditingIssue({
+      id: '',
+      projectId: tc.projectId,
+      srNo: nextSrNo,
+      date: new Date().toISOString().split('T')[0],
+      module: tc.module,
+      issue: `${tc.title}${tc.remarks ? ` - Error: ${tc.remarks}` : ''}`,
+      expectedResult: tc.expectedResult,
+      status: 'Open',
+      severity: 'High',
+      remarks: `Reported from Targeted Test Case #${tc.srNo}${tc.assignedBy ? ` (Assigned by: ${tc.assignedBy})` : ''}`,
+      createdAt: '',
+      updatedAt: '',
+    });
+    setIsIssueModalOpen(true);
+  };
+
   // Import JSON handler
   const handleImportJSON = (file: File) => {
     const reader = new FileReader();
@@ -625,6 +776,8 @@ export const App: React.FC = () => {
         projects={projects}
         activeProject={activeProject}
         issues={rawIssues}
+        testCases={testCases}
+        activeTab={activeTab}
         onSelectProject={(id) => setActiveProjectId(id)}
         onOpenNewProjectModal={() => {
           setEditingProject(null);
@@ -703,66 +856,134 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* Project Status Stats Bar */}
-        <ProjectStats
-          issues={rawIssues}
-          currentStatusFilter={filters.status}
-          onFilterByStatus={(statusKey) =>
-            setFilters((prev) => ({ ...prev, status: statusKey }))
-          }
-        />
+        {/* Navigation Tabs: Issues & Defects vs Targeted Test Cases */}
+        <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab('issues')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition shadow-2xs cursor-pointer ${
+              activeTab === 'issues'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+            }`}
+          >
+            <AlertCircle className="w-4 h-4" />
+            <span>Issues & Defects</span>
+            <span
+              className={`ml-1 px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
+                activeTab === 'issues'
+                  ? 'bg-blue-700 text-white'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+              }`}
+            >
+              {rawIssues.length}
+            </span>
+          </button>
 
-        {/* Search, Filter, View Mode, and Action Controls */}
-        <FilterBar
-          filters={filters}
-          onFilterChange={setFilters}
-          onResetFilters={() =>
-            setFilters({
-              search: '',
-              module: 'ALL',
-              status: 'ALL',
-              severity: 'ALL',
-              startDate: '',
-              endDate: '',
-              sortBy: 'srNo',
-              sortOrder: 'asc',
-            })
-          }
-          onOpenNewIssueModal={() => {
-            setEditingIssue(null);
-            setIsIssueModalOpen(true);
-          }}
-          filteredCount={filteredIssues.length}
-          totalCount={rawIssues.length}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          availableModules={availableModules}
-          searchInputRef={searchInputRef}
-        />
+          <button
+            type="button"
+            onClick={() => setActiveTab('testCases')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition shadow-2xs cursor-pointer ${
+              activeTab === 'testCases'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+            }`}
+          >
+            <Target className="w-4 h-4" />
+            <span>Targeted Test Cases</span>
+            <span
+              className={`ml-1 px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
+                activeTab === 'testCases'
+                  ? 'bg-blue-700 text-white'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+              }`}
+            >
+              {testCases.length}
+            </span>
+          </button>
+        </div>
 
-        {/* Issue Data Table / Responsive Card Grid */}
-        {activeProject && (
-          <IssueTable
-            issues={filteredIssues}
-            project={activeProject}
-            nextSrNo={nextSrNo}
-            viewMode={viewMode}
-            onEditIssue={(issue) => {
-              setEditingIssue(issue);
-              setIsIssueModalOpen(true);
+        {activeTab === 'issues' ? (
+          <>
+            {/* Project Status Stats Bar */}
+            <ProjectStats
+              issues={rawIssues}
+              currentStatusFilter={filters.status}
+              onFilterByStatus={(statusKey) =>
+                setFilters((prev) => ({ ...prev, status: statusKey }))
+              }
+            />
+
+            {/* Search, Filter, View Mode, and Action Controls */}
+            <FilterBar
+              filters={filters}
+              onFilterChange={setFilters}
+              onResetFilters={() =>
+                setFilters({
+                  search: '',
+                  module: 'ALL',
+                  status: 'ALL',
+                  severity: 'ALL',
+                  startDate: '',
+                  endDate: '',
+                  sortBy: 'srNo',
+                  sortOrder: 'asc',
+                })
+              }
+              onOpenNewIssueModal={() => {
+                setEditingIssue(null);
+                setIsIssueModalOpen(true);
+              }}
+              filteredCount={filteredIssues.length}
+              totalCount={rawIssues.length}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              availableModules={availableModules}
+              searchInputRef={searchInputRef}
+            />
+
+            {/* Issue Data Table / Responsive Card Grid */}
+            {activeProject && (
+              <IssueTable
+                issues={filteredIssues}
+                project={activeProject}
+                nextSrNo={nextSrNo}
+                viewMode={viewMode}
+                onEditIssue={(issue) => {
+                  setEditingIssue(issue);
+                  setIsIssueModalOpen(true);
+                }}
+                onDeleteIssue={handleDeleteIssueClick}
+                onStatusChange={handleInlineStatusChange}
+                onPreviewImage={(url, title) =>
+                  setLightbox({ isOpen: true, imageUrl: url, title })
+                }
+                onOpenNewIssueModal={() => {
+                  setEditingIssue(null);
+                  setIsIssueModalOpen(true);
+                }}
+                onQuickAddIssue={handleQuickAddIssue}
+                onBulkDelete={handleBulkDelete}
+                onBulkStatusChange={handleBulkStatusChange}
+              />
+            )}
+          </>
+        ) : (
+          <TestCaseView
+            testCases={testCases}
+            onAddTestCase={() => {
+              setEditingTestCase(null);
+              setIsTestCaseModalOpen(true);
             }}
-            onDeleteIssue={handleDeleteIssueClick}
-            onStatusChange={handleInlineStatusChange}
-            onPreviewImage={(url, title) =>
-              setLightbox({ isOpen: true, imageUrl: url, title })
-            }
-            onOpenNewIssueModal={() => {
-              setEditingIssue(null);
-              setIsIssueModalOpen(true);
+            onEditTestCase={(tc) => {
+              setEditingTestCase(tc);
+              setIsTestCaseModalOpen(true);
             }}
-            onQuickAddIssue={handleQuickAddIssue}
-            onBulkDelete={handleBulkDelete}
-            onBulkStatusChange={handleBulkStatusChange}
+            onDeleteTestCase={handleDeleteTestCaseClick}
+            onStatusChange={handleTestCaseStatusChange}
+            onRemarksChange={handleTestCaseRemarksChange}
+            onConvertIssue={handleConvertTestCaseToIssue}
+            onExportCSV={() => activeProject && exportTestCasesToCSV(activeProject, testCases)}
           />
         )}
       </main>
@@ -811,6 +1032,18 @@ export const App: React.FC = () => {
         }}
         onSave={handleSaveIssue}
         onOpenCloudinarySettings={() => setIsCloudinaryModalOpen(true)}
+      />
+
+      <TestCaseModal
+        isOpen={isTestCaseModalOpen}
+        projectId={activeProjectId}
+        nextSrNo={nextTestCaseSrNo}
+        initialTestCase={editingTestCase}
+        onClose={() => {
+          setIsTestCaseModalOpen(false);
+          setEditingTestCase(null);
+        }}
+        onSave={handleSaveTestCase}
       />
 
       <ProjectModal

@@ -20,12 +20,15 @@ import {
   Database,
 } from 'lucide-react';
 import { Project, Issue } from '../types/issue';
-import { exportIssuesToCSV, exportProjectToJSON } from '../utils/export';
+import { TestCase } from '../types/testCase';
+import { exportIssuesToCSV, exportTestCasesToCSV, exportProjectToJSON } from '../utils/export';
 
 interface HeaderProps {
   projects: Project[];
   activeProject: Project | null;
   issues: Issue[];
+  testCases?: TestCase[];
+  activeTab?: 'issues' | 'testCases';
   onSelectProject: (projectId: string) => void;
   onOpenNewProjectModal: () => void;
   onOpenEditProjectModal: () => void;
@@ -46,6 +49,8 @@ export const Header: React.FC<HeaderProps> = ({
   projects,
   activeProject,
   issues,
+  testCases = [],
+  activeTab = 'issues',
   onSelectProject,
   onOpenNewProjectModal,
   onOpenEditProjectModal,
@@ -241,8 +246,18 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Export CSV Button */}
             {activeProject && (
               <button
-                onClick={() => exportIssuesToCSV(activeProject, issues)}
-                title="Export Issues to CSV (Excel format)"
+                onClick={() => {
+                  if (activeTab === 'testCases') {
+                    exportTestCasesToCSV(activeProject, testCases);
+                  } else {
+                    exportIssuesToCSV(activeProject, issues);
+                  }
+                }}
+                title={
+                  activeTab === 'testCases'
+                    ? 'Export Targeted Test Cases to CSV (Excel format)'
+                    : 'Export Issues to CSV (Excel format)'
+                }
                 className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800 rounded-xl transition shadow-xs active:scale-95"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -441,13 +456,17 @@ export const Header: React.FC<HeaderProps> = ({
               {activeProject && (
                 <button
                   onClick={() => {
-                    exportIssuesToCSV(activeProject, issues);
+                    if (activeTab === 'testCases') {
+                      exportTestCasesToCSV(activeProject, testCases);
+                    } else {
+                      exportIssuesToCSV(activeProject, issues);
+                    }
                     setIsMobileMenuOpen(false);
                   }}
                   className="flex items-center gap-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 rounded-lg font-medium text-emerald-700 dark:text-emerald-300"
                 >
                   <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                  Export CSV
+                  <span>{activeTab === 'testCases' ? 'Export Test Cases' : 'Export CSV'}</span>
                 </button>
               )}
 
