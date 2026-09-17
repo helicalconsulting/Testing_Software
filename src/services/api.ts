@@ -1,6 +1,6 @@
 import { Project, Issue, IssueStatus } from '../types/issue';
-
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '') + '/api';
+const rawBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+const API_BASE = rawBase ? (rawBase.endsWith('/api') ? rawBase : `${rawBase}/api`) : '/api';
 
 export interface HealthCheckResponse {
   online: boolean;
