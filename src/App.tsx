@@ -819,7 +819,7 @@ export const App: React.FC = () => {
                   {activeProject.prefix}
                 </span>
 
-                {/* Visible Edit & Delete Project Action Buttons */}
+                {/* Visible Edit Project Action Button */}
                 <div className="flex items-center gap-1.5 xs:gap-2">
                   <button
                     type="button"
@@ -832,16 +832,6 @@ export const App: React.FC = () => {
                   >
                     <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span>Edit</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleDeleteProjectClick}
-                    title="Delete this project"
-                    className="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/60 rounded-lg transition shadow-2xs cursor-pointer active:scale-95"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span>Delete Project</span>
                   </button>
                 </div>
               </div>
