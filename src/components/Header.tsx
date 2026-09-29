@@ -193,19 +193,6 @@ export const Header: React.FC<HeaderProps> = ({
                         Edit Project Settings
                       </button>
                     )}
-                    {/* Delete Project is ALWAYS accessible whenever activeProject exists (even if it's the last one) */}
-                    {activeProject && (
-                      <button
-                        onClick={() => {
-                          setIsProjectDropdownOpen(false);
-                          onDeleteProject();
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Delete Current Project
-                      </button>
-                    )}
                   </div>
                 </div>
               )}
@@ -401,20 +388,6 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <Edit3 className="w-3.5 h-3.5" />
                     Edit Settings
-                  </button>
-                )}
-
-                {/* Delete Project Button: ALWAYS accessible even when 1 project remains */}
-                {activeProject && (
-                  <button
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      onDeleteProject();
-                    }}
-                    className="col-span-2 flex items-center justify-center gap-1.5 px-2.5 py-2 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold transition border border-red-200 dark:border-red-900"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Delete Current Project
                   </button>
                 )}
               </div>
